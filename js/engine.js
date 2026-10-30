@@ -13,8 +13,10 @@ function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9\u4e00-\u9
 function fmt(s,o){ return String(s).replace(/\{(\w+)\}/g,(_,k)=>(o&&o[k]!=null?o[k]:"")); }
 
 /* ---------------- i18n ---------------- */
-/* English-only build (Dennis 2026-10-30): no language picker, everything in English. */
-const LANG="en";
+/* Language: defaults to English, switchable anytime via the top-right selector. */
+const LANGS=["en","zh","es"];
+let LANG="en";
+try{ const l=localStorage.getItem("apush_guesser_lang"); if(LANGS.indexOf(l)>=0) LANG=l; }catch(e){}
 
 const STR={
 en:{
@@ -203,6 +205,12 @@ function pickWho(o){
   return o.who||[];
 }
 function dispName(t){ const n=pick(t,"topic"); return n||t.topic_en; }
+function setLang(l){
+  if(LANGS.indexOf(l)<0) return;
+  LANG=l; try{ localStorage.setItem("apush_guesser_lang",l); }catch(e){}
+  const sel=$("langSel"); if(sel) sel.value=l;
+  applyI18n();
+}
 /* image credit stored in Chinese in the data files; display in English */
 function imgCredit(t){
   const c=(t.img&&t.img.credit)||"";
@@ -392,7 +400,10 @@ why_term_fib(p,t){
   if(!t.why_term) return null;
   const keys=(t.why_term_accept||[t.why_term]).map(norm);
   const nm=dispName(t);
-  const prompt=fmt(tr("s_why_term_q"),{name:nm});
+  let qtext=null;
+  if(LANG==="es"&&t.why_term_q_es) qtext=t.why_term_q_es;
+  else if(LANG==="zh"&&t.why_term_q) qtext=t.why_term_q;
+  const prompt=qtext||fmt(tr("s_why_term_q"),{name:nm});
   return {tag:tr("tag_why_fib"),cls:"why",topic:t,kind:"fib",
     promptHTML:tr("s_why_term")+esc(prompt),
     answerText:t.why_term,
@@ -517,7 +528,8 @@ function renderHome(){
     const d=document.createElement("div"); d.className="period";
     const played=st&&st.total?fmt(tr("played"),{n:st.total}):"";
     d.innerHTML="<div class='pn'>PERIOD "+pd.id+" \u00b7 "+esc(pd.range)+"</div>"+
-      "<div class='pt'>"+esc(pd.en)+"</div>"+
+      "<div class='pt'>"+esc(LANG==="es"&&pd.es?pd.es:(LANG==="zh"?pd.zh:pd.en))+"</div>"+
+      (LANG==="en"?"":"<div class='pr'>"+esc(LANG==="zh"?pd.en:(pd.zh||""))+"</div>")+
       "<div class='pm'>"+fmt(tr("bank_line"),{n:n,acc:acc,played:played})+"</div>";
     d.onclick=()=>{G.period=pd.id; renderMode(); show("view-mode");};
     g.appendChild(d);
@@ -675,7 +687,7 @@ function renderTopics(sel){
   PERIODS.forEach(pd=>{
     const b=document.createElement("button");
     b.className="tab"+(pd.id===sel?" sel":"");
-    b.textContent="P"+pd.id+" "+pd.en;
+    b.textContent="P"+pd.id+" "+(LANG==="es"&&pd.es?pd.es:(LANG==="zh"?pd.zh:pd.en));
     b.onclick=()=>renderTopics(pd.id);
     tabs.appendChild(b);
   });
@@ -723,6 +735,9 @@ $("btnTopics").onclick=()=>{ renderTopics(1); show("view-topics"); };
 $("btnClearWrong").onclick=()=>{ if(confirm(tr("confirm_clear"))){ store.wrong=[]; save(); renderReview(); } };
 $("btnRetryWrong").onclick=()=>{ renderMode(); show("view-mode"); selMode="mixed"; renderMode();
   setTimeout(()=>startPlay(true),50); };
+const _ls=$("langSel");
+if(_ls){ _ls.value=LANG; _ls.onchange=()=>setLang(_ls.value); }
+
 /* init */
 applyI18n(); renderHome(); show("view-home");
 
