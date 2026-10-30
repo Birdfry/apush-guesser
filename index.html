@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APUSH Guesser · 美国历史猜谜</title>
+<style>
+  :root{
+    --bg:#0f172a; --bg2:#1e293b; --card:#1e293b; --line:#334155;
+    --ink:#f1f5f9; --mut:#94a3b8; --acc:#38bdf8; --acc2:#a78bfa;
+    --good:#34d399; --bad:#f87171; --warn:#fbbf24;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:linear-gradient(180deg,var(--bg),#0b1220); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       min-height:100vh;}
+  .wrap{max-width:860px; margin:0 auto; padding:20px 16px 60px;}
+  header{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+  header .logo{font-size:30px;}
+  header h1{font-size:22px; margin:0;}
+  header p{margin:2px 0 0; color:var(--mut); font-size:13px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px;}
+  .view{display:none;} .view.on{display:block; animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1;}}
+  .period-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+  .period{background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:14px; cursor:pointer; transition:.15s;}
+  .period:hover{border-color:var(--acc); transform:translateY(-2px);}
+  .period .pn{font-size:12px; color:var(--acc); font-weight:700; letter-spacing:.5px;}
+  .period .pt{font-size:16px; font-weight:700; margin:4px 0;}
+  .period .pr{font-size:12px; color:var(--mut);}
+  .period .pm{font-size:12px; color:var(--mut); margin-top:8px;}
+  .period .pm b{color:var(--warn);}
+  .btn{display:inline-block; background:var(--acc); color:#06283a; border:0; border-radius:10px;
+       padding:12px 22px; font-size:16px; font-weight:700; cursor:pointer; margin:6px 6px 6px 0;}
+  .btn:hover{filter:brightness(1.1);}
+  .btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line);}
+  .btn.big{font-size:18px; padding:14px 30px;}
+  .btn:disabled{opacity:.45; cursor:default;}
+  .mode-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin:14px 0;}
+  .mode{background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:14px; text-align:center; cursor:pointer;}
+  .mode:hover{border-color:var(--acc2);}
+  .mode.sel{border-color:var(--acc); background:#0c2f44;}
+  .mode .t{font-size:17px; font-weight:700;}
+  .mode .d{font-size:12px; color:var(--mut); margin-top:4px;}
+  .hud{display:flex; gap:14px; flex-wrap:wrap; font-size:14px; color:var(--mut); margin-bottom:12px;}
+  .hud b{color:var(--ink);} .hud .streak b{color:var(--warn);}
+  .qtag{display:inline-block; font-size:12px; font-weight:700; color:#06283a; background:var(--acc);
+        border-radius:20px; padding:3px 12px; margin-bottom:10px;}
+  .qtag.who{background:var(--acc2); color:#1e1040;} .qtag.why{background:var(--warn); color:#3a2a06;}
+  .qtag.pic{background:var(--good); color:#052e22;}
+  .qprompt{font-size:17px; line-height:1.65; margin:8px 0 14px;}
+  .qprompt .src{border-left:3px solid var(--acc2); padding:8px 12px; background:#141d33; border-radius:0 8px 8px 0;
+                font-style:italic; color:#dbeafe; margin:10px 0;}
+  .qimg{max-width:100%; border-radius:10px; border:1px solid var(--line); margin:6px 0;}
+  .imgcredit{font-size:11px; color:var(--mut); margin:-2px 0 10px;}
+  .opt{display:block; width:100%; text-align:left; background:var(--bg2); color:var(--ink);
+       border:1px solid var(--line); border-radius:10px; padding:12px 14px; font-size:15px; margin:8px 0; cursor:pointer;}
+  .opt:hover:not(:disabled){border-color:var(--acc);}
+  .opt:disabled{cursor:default; opacity:.85;}
+  .opt.right{border-color:var(--good); background:#06302a;}
+  .opt.wrong{border-color:var(--bad); background:#3a1414;}
+  .fibrow{display:flex; gap:8px; margin:10px 0;}
+  .fibrow input{flex:1; background:var(--bg2); border:1px solid var(--line); border-radius:10px;
+                color:var(--ink); font-size:16px; padding:12px;}
+  .feedback{border-radius:12px; padding:14px; margin-top:14px; display:none;}
+  .feedback.on{display:block;}
+  .feedback.good{background:#06302a; border:1px solid var(--good);}
+  .feedback.bad{background:#3a1414; border:1px solid var(--bad);}
+  .feedback .verdict{font-size:18px; font-weight:800; margin-bottom:6px;}
+  .feedback.good .verdict{color:var(--good);} .feedback.bad .verdict{color:var(--bad);}
+  .feedback .exp{font-size:14px; line-height:1.7; color:#e2e8f0;}
+  .feedback .cite{font-size:12px; color:var(--mut); margin-top:8px;}
+  .topic-list .titem{background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:12px; margin:8px 0;}
+  .topic-list .titem h4{margin:0 0 6px; font-size:15px;}
+  .topic-list .titem .meta{font-size:12px; color:var(--mut); line-height:1.7;}
+  .topic-list .titem .meta b{color:var(--acc);}
+  .tabs{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+  .tab{background:var(--bg2); border:1px solid var(--line); color:var(--ink); border-radius:20px;
+       padding:8px 16px; cursor:pointer; font-size:14px;}
+  .tab.sel{background:var(--acc); color:#06283a; font-weight:700;}
+  .empty{color:var(--mut); text-align:center; padding:30px; font-size:14px;}
+  .rev-item{background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:12px; margin:8px 0; font-size:14px;}
+  .rev-item .rq{color:#e2e8f0;} .rev-item .ra{color:var(--good);} .rev-item .ru{color:var(--bad);}
+  footer{margin-top:30px; color:var(--mut); font-size:12px; line-height:1.8; text-align:center;}
+  .kbd-hint{font-size:12px; color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🏛️</div>
+    <div>
+      <h1>APUSH Guesser · 美国历史猜谜</h1>
+      <p>题库全部来自 Henretta《America's History for the AP® Course》第 8 版 · 题目无限生成</p>
+    </div>
+  </header>
+
+  <!-- HOME: period select -->
+  <div class="view on" id="view-home">
+    <div class="card">
+      <h3 style="margin-top:0">选择一个历史时期 Period</h3>
+      <div class="period-grid" id="periodGrid"></div>
+    </div>
+    <div class="card">
+      <button class="btn ghost" id="btnReview">📕 错题本 <span id="reviewCount"></span></button>
+      <button class="btn ghost" id="btnTopics">📚 考点一览</button>
+    </div>
+    <footer>图片标注：PDF 内图注 "Henretta 第8版 p.X"；外部图注来源链接。<br>混合 / 猜 When / 猜 Who / 猜 Why / 🖼️看图猜事件 · 选择题 + 填空题 · 即时反馈 · 本地计分</footer>
+  </div>
+
+  <!-- MODE -->
+  <div class="view" id="view-mode">
+    <div class="card">
+      <h3 style="margin-top:0" id="modePeriodTitle"></h3>
+      <p class="kbd-hint">选择玩法模式（题目会无限生成，答对加分、连击加成）</p>
+      <div class="mode-grid" id="modeGrid"></div>
+      <button class="btn big" id="btnStart">开始 ▶</button>
+      <button class="btn ghost" id="btnBackHome1">← 返回</button>
+    </div>
+  </div>
+
+  <!-- PLAY -->
+  <div class="view" id="view-play">
+    <div class="hud">
+      <span>得分 <b id="hScore">0</b></span>
+      <span class="streak">🔥 连击 <b id="hStreak">0</b></span>
+      <span>正确率 <b id="hAcc">–</b></span>
+      <span>已答 <b id="hTotal">0</b></span>
+    </div>
+    <div class="card">
+      <span class="qtag" id="qTag">WHEN</span>
+      <div class="qprompt" id="qPrompt"></div>
+      <div id="qBody"></div>
+      <div class="feedback" id="qFeedback"></div>
+      <div style="margin-top:12px">
+        <button class="btn" id="btnNext" style="display:none">下一题 →</button>
+        <button class="btn ghost" id="btnQuit">结束本轮</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOPICS -->
+  <div class="view" id="view-topics">
+    <div class="card">
+      <h3 style="margin-top:0">📚 考点一览（全部来自教材原文）</h3>
+      <div class="tabs" id="topicTabs"></div>
+      <div class="topic-list" id="topicList"></div>
+      <button class="btn ghost" id="btnBackHome2">← 返回</button>
+    </div>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="view" id="view-review">
+    <div class="card">
+      <h3 style="margin-top:0">📕 错题本</h3>
+      <p class="kbd-hint">答错的题目会自动收录在这里，点"重练错题"可以逐题再答一次。</p>
+      <button class="btn" id="btnRetryWrong">重练错题</button>
+      <button class="btn ghost" id="btnClearWrong">清空错题本</button>
+      <button class="btn ghost" id="btnBackHome3">← 返回</button>
+      <div id="reviewList" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<script src="data/periods.js"></script>
+<script src="data/img_chunks.js"></script>
+<script src="data/topics_1.js"></script>
+<script src="data/topics_2.js"></script>
+<script src="data/topics_3.js"></script>
+<script src="data/topics_4.js"></script>
+<script src="data/topics_5.js"></script>
+<script src="data/topics_6.js"></script>
+<script src="data/topics_7.js"></script>
+<script src="data/topics_8.js"></script>
+<script src="data/topics_9.js"></script>
+<script src="js/engine.js"></script>
+</body>
+</html>

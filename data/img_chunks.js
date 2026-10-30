@@ -1,0 +1,1 @@
+window.APUSH_IMG_CHUNKS=["data/images_1.js", "data/images_2.js", "data/images_3.js", "data/images_4.js"];

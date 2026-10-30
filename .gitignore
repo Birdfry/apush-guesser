@@ -1,0 +1,8 @@
+.venv/
+data/text_*.jsonl
+data/parts/
+data/headings.json
+data/images.json
+data/topics_raw_*.json
+data/topics_ch*.json
+assets/img/
