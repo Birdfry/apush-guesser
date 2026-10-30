@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APUSH Guesser · 美国历史猜谜</title>
+<title>APUSH Guesser</title>
 <style>
   :root{
     --bg:#0f172a; --bg2:#1e293b; --card:#1e293b; --line:#334155;
@@ -20,14 +20,6 @@
   header h1{font-size:22px; margin:0;}
   header p{margin:2px 0 0; color:var(--mut); font-size:13px;}
   header .spacer{flex:1;}
-  #langSel{background:var(--bg2); color:var(--ink); border:1px solid var(--line); border-radius:10px;
-           padding:8px 10px; font-size:14px; cursor:pointer;}
-  .lang-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:14px;}
-  .lang{background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:22px 14px;
-        text-align:center; cursor:pointer; transition:.15s;}
-  .lang:hover{border-color:var(--acc); transform:translateY(-2px);}
-  .lang .lt{font-size:20px; font-weight:800;}
-  .lang .ld{font-size:12px; color:var(--mut); margin-top:6px;}
   .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px;}
   .view{display:none;} .view.on{display:block; animation:fade .25s ease;}
   @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1;}}
@@ -99,29 +91,10 @@
   <header>
     <div class="logo">🏛️</div>
     <div>
-      <h1>APUSH Guesser · 美国历史猜谜</h1>
+      <h1>APUSH Guesser</h1>
       <p id="hdrSub"></p>
     </div>
-    <div class="spacer"></div>
-    <select id="langSel" title="Language / 语言 / Idioma">
-      <option value="en">🌐 English</option>
-      <option value="zh">🌐 中文</option>
-      <option value="es">🌐 Español</option>
-    </select>
   </header>
-
-  <!-- LANG: first-run language picker -->
-  <div class="view" id="view-lang">
-    <div class="card">
-      <h3 style="margin-top:0" id="langTitle"></h3>
-      <p class="kbd-hint" id="langNote"></p>
-      <div class="lang-grid">
-        <div class="lang" id="langBtnEn"><div class="lt">English</div><div class="ld">Play in English</div></div>
-        <div class="lang" id="langBtnZh"><div class="lt">中文</div><div class="ld">用中文玩</div></div>
-        <div class="lang" id="langBtnEs"><div class="lt">Español</div><div class="ld">Jugar en español</div></div>
-      </div>
-    </div>
-  </div>
 
   <!-- HOME: period select -->
   <div class="view" id="view-home">

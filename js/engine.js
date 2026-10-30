@@ -13,10 +13,8 @@ function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9\u4e00-\u9
 function fmt(s,o){ return String(s).replace(/\{(\w+)\}/g,(_,k)=>(o&&o[k]!=null?o[k]:"")); }
 
 /* ---------------- i18n ---------------- */
-const LANGS=["en","zh","es"];
-let LANG=null;
-try{ LANG=localStorage.getItem("apush_guesser_lang"); }catch(e){}
-if(LANGS.indexOf(LANG)<0) LANG=null;
+/* English-only build (Dennis 2026-10-30): no language picker, everything in English. */
+const LANG="en";
 
 const STR={
 en:{
@@ -205,11 +203,11 @@ function pickWho(o){
   return o.who||[];
 }
 function dispName(t){ const n=pick(t,"topic"); return n||t.topic_en; }
-function setLang(l){
-  if(LANGS.indexOf(l)<0) return;
-  LANG=l; try{ localStorage.setItem("apush_guesser_lang",l); }catch(e){}
-  const sel=$("langSel"); if(sel) sel.value=l;
-  applyI18n();
+/* image credit stored in Chinese in the data files; display in English */
+function imgCredit(t){
+  const c=(t.img&&t.img.credit)||"";
+  const m=String(c).match(/p\.(\d+)/);
+  return "Image: Henretta's \u201cAmerica's History\u201d, 8th ed."+(m?", p."+m[1]:"");
 }
 
 /* ---------------- storage ---------------- */
@@ -263,7 +261,7 @@ function imgURL(t){
 function imgHTML(t,show){
   const u=show?imgURL(t):null;
   if(!u) return "";
-  return "<div><img class='qimg' src='"+u+"'><div class='imgcredit'>"+esc(t.img.credit||"")+"</div></div>";
+  return "<div><img class='qimg' src='"+u+"'><div class='imgcredit'>"+esc(imgCredit(t))+"</div></div>";
 }
 function srcHTML(t){
   if(!t.src||!t.src.text) return "";
@@ -290,7 +288,7 @@ when_year_mcq(p,t){
   const opts=shuffle([{t:String(t.year),ok:1},...d.map(x=>({t:x,ok:0}))]);
   return {tag:tr("tag_when_mcq"),cls:"",topic:t,kind:"mcq",options:opts,
     promptHTML:tr("s_when_year")+"<br><b>"+esc(nm)+"</b><br><span style='color:var(--mut)'>"+esc(what)+"</span>"+imgHTML(t,true),
-    answerText:String(t.year)+(t.year_text&&t.year_text!==String(t.year)?"\uff08"+t.year_text+"\uff09":""),
+    answerText:String(t.year)+(t.year_text&&t.year_text!==String(t.year)?"("+t.year_text+")":""),
     check:u=>u===String(t.year)};
 },
 when_year_fib(p,t){
@@ -299,7 +297,7 @@ when_year_fib(p,t){
   return {tag:tr("tag_when_fib"),cls:"",topic:t,kind:"fib",
     promptHTML:fmt(tr("s_when_year_fib"),{name:esc(nm)})+"<br><span style='color:var(--mut)'>"+esc(what)+"</span>"+
       "<br><span class='kbd-hint'>"+esc(tr("s_when_year_hint"))+"</span>"+imgHTML(t,true),
-    answerText:String(t.year)+(t.year_text&&t.year_text!==String(t.year)?"\uff08"+t.year_text+"\uff09":""),
+    answerText:String(t.year)+(t.year_text&&t.year_text!==String(t.year)?"("+t.year_text+")":""),
     check:u=>{const m=String(u).match(/\d{3,4}/); return m&&Math.abs(parseInt(m[0],10)-t.year)<=1;}};
 },
 when_first_mcq(p,t){
@@ -309,10 +307,10 @@ when_first_mcq(p,t){
   const years=picks.map(x=>x.year);
   if(new Set(years).size<4) return null;
   const first=picks.reduce((a,b)=>a.year<b.year?a:b);
-  const opts=shuffle(picks.map(x=>({t:dispName(x)+(x.year_text?"\uff08"+x.year_text+"\uff09":""),ok:x.id===first.id?1:0})));
+  const opts=shuffle(picks.map(x=>({t:dispName(x)+(x.year_text?"("+x.year_text+")":""),ok:x.id===first.id?1:0})));
   return {tag:tr("tag_when_mcq"),cls:"",topic:t,kind:"mcq",options:opts,
     promptHTML:tr("s_when_first"),
-    answerText:dispName(first)+"\uff08"+first.year+"\uff09",
+    answerText:dispName(first)+"("+first.year+")",
     check:u=>u===dispName(first)};
 },
 when_src_mcq(p,t){
@@ -394,8 +392,7 @@ why_term_fib(p,t){
   if(!t.why_term) return null;
   const keys=(t.why_term_accept||[t.why_term]).map(norm);
   const nm=dispName(t);
-  const qtext=t.why_term_q&&LANG!=="en"?(LANG==="es"&&t.why_term_q_es?t.why_term_q_es:(LANG==="zh"?t.why_term_q:t.why_term_q)):t.why_term_q;
-  const prompt=qtext||fmt(tr("s_why_term_q"),{name:nm});
+  const prompt=fmt(tr("s_why_term_q"),{name:nm});
   return {tag:tr("tag_why_fib"),cls:"why",topic:t,kind:"fib",
     promptHTML:tr("s_why_term")+esc(prompt),
     answerText:t.why_term,
@@ -479,8 +476,8 @@ function markRecent(p,tid){
 }
 
 /* ---------------- views ---------------- */
-const VIEWS=["view-lang","view-home","view-mode","view-play","view-topics","view-review"];
-let currentView="view-lang", lastTopicsSel=1;
+const VIEWS=["view-home","view-mode","view-play","view-topics","view-review"];
+let currentView="view-home", lastTopicsSel=1;
 function show(v){ currentView=v; VIEWS.forEach(x=>$(x).classList.toggle("on",x===v)); window.scrollTo(0,0); }
 
 function applyI18n(){
@@ -512,11 +509,6 @@ function applyI18n(){
   else if(currentView==="view-review") renderReview();
 }
 
-function renderLang(){
-  $("langTitle").innerHTML="Choose your language<br>\u9009\u62e9\u8bed\u8a00<br>Elige tu idioma";
-  $("langNote").innerHTML="You can change it anytime from the \uD83C\uDF10 menu.<br>\u968f\u65f6\u53ef\u4ee5\u5728\u53f3\u4e0a\u89d2 \uD83C\uDF10 \u5207\u6362\u3002<br>Puedes cambiarlo cuando quieras en el men\u00fa \uD83C\uDF10.";
-}
-
 function renderHome(){
   const g=$("periodGrid"); g.innerHTML="";
   PERIODS.forEach(pd=>{
@@ -525,8 +517,7 @@ function renderHome(){
     const d=document.createElement("div"); d.className="period";
     const played=st&&st.total?fmt(tr("played"),{n:st.total}):"";
     d.innerHTML="<div class='pn'>PERIOD "+pd.id+" \u00b7 "+esc(pd.range)+"</div>"+
-      "<div class='pt'>"+esc(LANG==="es"&&pd.es?pd.es:(LANG==="zh"?pd.zh:pd.en))+"</div>"+
-      "<div class='pr'>"+esc(LANG==="zh"?pd.en:(pd.zh||""))+"</div>"+
+      "<div class='pt'>"+esc(pd.en)+"</div>"+
       "<div class='pm'>"+fmt(tr("bank_line"),{n:n,acc:acc,played:played})+"</div>";
     d.onclick=()=>{G.period=pd.id; renderMode(); show("view-mode");};
     g.appendChild(d);
@@ -623,7 +614,7 @@ function answer(user,mcqOk){
   const tp=q.topic;
   const iu=imgURL(tp);
   if(iu&&!q._hasImgInPrompt)
-    h+="<div><img class='qimg' src='"+iu+"'><div class='imgcredit'>"+esc(tp.img.credit||"")+"</div></div>";
+    h+="<div><img class='qimg' src='"+iu+"'><div class='imgcredit'>"+esc(imgCredit(tp))+"</div></div>";
   h+="<div class='cite'>"+q.citeHTML+"</div>";
   fb.innerHTML=h;
   $("btnNext").style.display="inline-block";
@@ -684,7 +675,7 @@ function renderTopics(sel){
   PERIODS.forEach(pd=>{
     const b=document.createElement("button");
     b.className="tab"+(pd.id===sel?" sel":"");
-    b.textContent="P"+pd.id+" "+(LANG==="es"&&pd.es?pd.es:(LANG==="zh"?pd.zh:pd.en));
+    b.textContent="P"+pd.id+" "+pd.en;
     b.onclick=()=>renderTopics(pd.id);
     tabs.appendChild(b);
   });
@@ -732,21 +723,13 @@ $("btnTopics").onclick=()=>{ renderTopics(1); show("view-topics"); };
 $("btnClearWrong").onclick=()=>{ if(confirm(tr("confirm_clear"))){ store.wrong=[]; save(); renderReview(); } };
 $("btnRetryWrong").onclick=()=>{ renderMode(); show("view-mode"); selMode="mixed"; renderMode();
   setTimeout(()=>startPlay(true),50); };
-$("langBtnEn").onclick=()=>{ setLang("en"); renderHome(); show("view-home"); };
-$("langBtnZh").onclick=()=>{ setLang("zh"); renderHome(); show("view-home"); };
-$("langBtnEs").onclick=()=>{ setLang("es"); renderHome(); show("view-home"); };
-const _ls=$("langSel");
-if(_ls){ _ls.value=LANG||"en"; _ls.onchange=()=>setLang(_ls.value); }
-
 /* init */
-renderLang();
-if(LANG){ applyI18n(); renderHome(); show("view-home"); }
-else{ applyI18n(); show("view-lang"); }
+applyI18n(); renderHome(); show("view-home");
 
 /* node smoke-test hook (harmless in browser) */
 if(typeof module!=="undefined"&&module.exports){
   module.exports={generateQuestion:generateQuestion,topicsOf:topicsOf,T:T,BY_MODE:BY_MODE,store:store,
-    setLang:setLang,tr:tr,pick:pick,dispName:dispName,
+    tr:tr,pick:pick,dispName:dispName,
     _test:{nextQuestion:nextQuestion,answer:answer,startPlay:startPlay,getG:function(){return G;},show:show}};
 }
 })();

@@ -18,9 +18,6 @@ def run():
         page.on("requestfailed", lambda r: failed_reqs.append(f"{r.url} :: {r.failure}"))
         page.goto(URL, wait_until="networkidle")
         time.sleep(1)
-        # pick English first (language picker shows on fresh profile)
-        if page.locator("#view-lang.on").count():
-            page.locator("#langBtnEn").click(); time.sleep(0.6)
 
         n_cards = page.locator(".period").count()
         print("period cards:", n_cards)
@@ -83,7 +80,7 @@ def run():
                 page.evaluate(f"""() => {{
                   const btns=[...document.querySelectorAll('#qBody .opt')];
                   const ans=window.__lastQ.answerText;
-                  const strip=s=>s.replace(/\\uff08.*\\uff09$/,'').trim();
+                  const strip=s=>s.replace(/[(\uff08].*[)\uff09]$/,'').trim();
                   let pick=btns.find(b=>strip(b.textContent)===strip(ans));
                   if(!pick) throw new Error('no matching option for answer: '+ans+' // options: '+btns.map(b=>b.textContent).join(' | '));
                   if({str(wrong).lower()}) pick=btns.find(b=>b!==pick);

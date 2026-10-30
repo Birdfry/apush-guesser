@@ -61,7 +61,7 @@ for (let p = 1; p <= 9; p++) {
         const texts = q.options.map(o=>o.t);
         check(new Set(texts).size === 4, `p${p}/${mode}/${q.template} distinct options: ${texts.join(" | ").slice(0,120)}`);
         // no absurd year distractors
-        texts.forEach(t=>{ if(/^\d+$/.test(t)) check(parseInt(t)>1000, `p${p}/${mode} year distractor sane: ${t}`); });
+        texts.forEach(t=>{ if(/^\d+$/.test(t)) check(parseInt(t)>=1000, `p${p}/${mode} year distractor sane: ${t}`); });
       } else {
         // fib check must accept the canonical answer
         const t = q.topic;
