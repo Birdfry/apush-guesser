@@ -19,6 +19,15 @@
   header .logo{font-size:30px;}
   header h1{font-size:22px; margin:0;}
   header p{margin:2px 0 0; color:var(--mut); font-size:13px;}
+  header .spacer{flex:1;}
+  #langSel{background:var(--bg2); color:var(--ink); border:1px solid var(--line); border-radius:10px;
+           padding:8px 10px; font-size:14px; cursor:pointer;}
+  .lang-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:14px;}
+  .lang{background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:22px 14px;
+        text-align:center; cursor:pointer; transition:.15s;}
+  .lang:hover{border-color:var(--acc); transform:translateY(-2px);}
+  .lang .lt{font-size:20px; font-weight:800;}
+  .lang .ld{font-size:12px; color:var(--mut); margin-top:6px;}
   .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px;}
   .view{display:none;} .view.on{display:block; animation:fade .25s ease;}
   @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1;}}
@@ -91,41 +100,60 @@
     <div class="logo">🏛️</div>
     <div>
       <h1>APUSH Guesser · 美国历史猜谜</h1>
-      <p>题库全部来自 Henretta《America's History for the AP® Course》第 8 版 · 题目无限生成</p>
+      <p id="hdrSub"></p>
     </div>
+    <div class="spacer"></div>
+    <select id="langSel" title="Language / 语言 / Idioma">
+      <option value="en">🌐 English</option>
+      <option value="zh">🌐 中文</option>
+      <option value="es">🌐 Español</option>
+    </select>
   </header>
 
-  <!-- HOME: period select -->
-  <div class="view on" id="view-home">
+  <!-- LANG: first-run language picker -->
+  <div class="view" id="view-lang">
     <div class="card">
-      <h3 style="margin-top:0">选择一个历史时期 Period</h3>
+      <h3 style="margin-top:0" id="langTitle"></h3>
+      <p class="kbd-hint" id="langNote"></p>
+      <div class="lang-grid">
+        <div class="lang" id="langBtnEn"><div class="lt">English</div><div class="ld">Play in English</div></div>
+        <div class="lang" id="langBtnZh"><div class="lt">中文</div><div class="ld">用中文玩</div></div>
+        <div class="lang" id="langBtnEs"><div class="lt">Español</div><div class="ld">Jugar en español</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME: period select -->
+  <div class="view" id="view-home">
+    <div class="card">
+      <h3 style="margin-top:0" id="homeTitle"></h3>
       <div class="period-grid" id="periodGrid"></div>
     </div>
     <div class="card">
-      <button class="btn ghost" id="btnReview">📕 错题本 <span id="reviewCount"></span></button>
-      <button class="btn ghost" id="btnTopics">📚 考点一览</button>
+      <button class="btn ghost" id="btnReview"></button>
+      <button class="btn ghost" id="btnTopics"></button>
     </div>
-    <footer>图片标注：PDF 内图注 "Henretta 第8版 p.X"；外部图注来源链接。<br>混合 / 猜 When / 猜 Who / 猜 Why / 🖼️看图猜事件 · 选择题 + 填空题 · 即时反馈 · 本地计分</footer>
+    <footer><div id="footer1"></div><div id="footer2"></div></footer>
   </div>
 
   <!-- MODE -->
   <div class="view" id="view-mode">
     <div class="card">
       <h3 style="margin-top:0" id="modePeriodTitle"></h3>
-      <p class="kbd-hint">选择玩法模式（题目会无限生成，答对加分、连击加成）</p>
+      <p class="kbd-hint" id="modeHint"></p>
       <div class="mode-grid" id="modeGrid"></div>
-      <button class="btn big" id="btnStart">开始 ▶</button>
-      <button class="btn ghost" id="btnBackHome1">← 返回</button>
+      <button class="btn big" id="btnStart"></button>
+      <button class="btn ghost" id="btnBackHome1"></button>
     </div>
   </div>
 
   <!-- PLAY -->
   <div class="view" id="view-play">
     <div class="hud">
-      <span>得分 <b id="hScore">0</b></span>
-      <span class="streak">🔥 连击 <b id="hStreak">0</b></span>
-      <span>正确率 <b id="hAcc">–</b></span>
-      <span>已答 <b id="hTotal">0</b></span>
+      <span><span id="hScoreL"></span> <b id="hScore">0</b></span>
+      <span class="streak">🔥 <span id="hStreakL"></span> <b id="hStreak">0</b></span>
+      <span><span id="hAccL"></span> <b id="hAcc">–</b></span>
+      <span><span id="hTotalL"></span> <b id="hTotal">0</b></span>
     </div>
     <div class="card">
       <span class="qtag" id="qTag">WHEN</span>
@@ -133,8 +161,8 @@
       <div id="qBody"></div>
       <div class="feedback" id="qFeedback"></div>
       <div style="margin-top:12px">
-        <button class="btn" id="btnNext" style="display:none">下一题 →</button>
-        <button class="btn ghost" id="btnQuit">结束本轮</button>
+        <button class="btn" id="btnNext" style="display:none"></button>
+        <button class="btn ghost" id="btnQuit"></button>
       </div>
     </div>
   </div>
@@ -142,21 +170,21 @@
   <!-- TOPICS -->
   <div class="view" id="view-topics">
     <div class="card">
-      <h3 style="margin-top:0">📚 考点一览（全部来自教材原文）</h3>
+      <h3 style="margin-top:0" id="topicsTitle"></h3>
       <div class="tabs" id="topicTabs"></div>
       <div class="topic-list" id="topicList"></div>
-      <button class="btn ghost" id="btnBackHome2">← 返回</button>
+      <button class="btn ghost" id="btnBackHome2"></button>
     </div>
   </div>
 
   <!-- REVIEW -->
   <div class="view" id="view-review">
     <div class="card">
-      <h3 style="margin-top:0">📕 错题本</h3>
-      <p class="kbd-hint">答错的题目会自动收录在这里，点"重练错题"可以逐题再答一次。</p>
-      <button class="btn" id="btnRetryWrong">重练错题</button>
-      <button class="btn ghost" id="btnClearWrong">清空错题本</button>
-      <button class="btn ghost" id="btnBackHome3">← 返回</button>
+      <h3 style="margin-top:0" id="reviewTitle"></h3>
+      <p class="kbd-hint" id="reviewHint"></p>
+      <button class="btn" id="btnRetryWrong"></button>
+      <button class="btn ghost" id="btnClearWrong"></button>
+      <button class="btn ghost" id="btnBackHome3"></button>
       <div id="reviewList" style="margin-top:12px"></div>
     </div>
   </div>

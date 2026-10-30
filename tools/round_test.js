@@ -80,7 +80,7 @@ for (let r = 0; r < 30; r++) {
       check(G.streak === 0, "wrong answer resets streak");
       check(eng.store.wrong.length > 0, "wrong answer recorded in 错题本");
       const fb = document.getElementById("qFeedback").innerHTML;
-      check(fb.includes("不对") && fb.includes("p."), "feedback shows verdict + citation");
+      check((fb.includes("不对")||fb.includes("Incorrect")) && fb.includes("p."), "feedback shows verdict + citation");
     } else {
       right.click();
       check(G.streak > 0, `round ${r} correct keeps streak`);
