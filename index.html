@@ -25,14 +25,24 @@
   .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px;}
   .view{display:none;} .view.on{display:block; animation:fade .25s ease;}
   @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1;}}
-  .period-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
-  .period{background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:14px; cursor:pointer; transition:.15s;}
-  .period:hover{border-color:var(--acc); transform:translateY(-2px);}
-  .period .pn{font-size:12px; color:var(--acc); font-weight:700; letter-spacing:.5px;}
-  .period .pt{font-size:16px; font-weight:700; margin:4px 0;}
-  .period .pr{font-size:12px; color:var(--mut);}
-  .period .pm{font-size:12px; color:var(--mut); margin-top:8px;}
-  .period .pm b{color:var(--warn);}
+  .hero{text-align:center; padding:30px 10px 20px;}
+  .hero h2{margin:0 0 10px; font-size:27px; font-weight:800; letter-spacing:.2px;}
+  .hero p{margin:0; color:var(--mut); font-size:14px;}
+  .period-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px;}
+  .period{display:flex; align-items:center; gap:14px; background:var(--bg2); border:1px solid var(--line);
+          border-radius:14px; padding:14px 16px; cursor:pointer; transition:.15s;}
+  .period:hover{border-color:var(--acc); transform:translateY(-2px); box-shadow:0 6px 18px rgba(56,189,248,.12);}
+  .period:active{transform:translateY(0) scale(.99);}
+  .pnum{flex:0 0 48px; height:48px; border-radius:50%; background:linear-gradient(135deg,var(--acc),var(--acc2));
+        color:#06283a; font-size:21px; font-weight:800; display:flex; align-items:center; justify-content:center;}
+  .pbody{flex:1; min-width:0;}
+  .prange{font-size:12px; color:var(--acc); font-weight:700; letter-spacing:.6px;}
+  .ptitle{font-size:15px; font-weight:700; margin:3px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pmeta{font-size:12px; color:var(--mut);}
+  .pgo{font-size:24px; color:var(--mut); flex:0 0 auto; line-height:1;}
+  .period:hover .pgo{color:var(--acc);}
+  .home-actions{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;}
+  .btn.small{font-size:13px; padding:9px 16px; font-weight:600;}
   .btn{display:inline-block; background:var(--acc); color:#06283a; border:0; border-radius:10px;
        padding:12px 22px; font-size:16px; font-weight:700; cursor:pointer; margin:6px 6px 6px 0;}
   .btn:hover{filter:brightness(1.1);}
@@ -106,13 +116,14 @@
 
   <!-- HOME: period select -->
   <div class="view" id="view-home">
-    <div class="card">
-      <h3 style="margin-top:0" id="homeTitle"></h3>
-      <div class="period-grid" id="periodGrid"></div>
+    <div class="hero">
+      <h2 id="heroTitle"></h2>
+      <p id="heroSub"></p>
     </div>
-    <div class="card">
-      <button class="btn ghost" id="btnReview"></button>
-      <button class="btn ghost" id="btnTopics"></button>
+    <div class="period-grid" id="periodGrid"></div>
+    <div class="home-actions">
+      <button class="btn ghost small" id="btnReview"></button>
+      <button class="btn ghost small" id="btnTopics"></button>
     </div>
     <footer><div id="footer1"></div><div id="footer2"></div></footer>
   </div>
@@ -143,6 +154,7 @@
       <div class="feedback" id="qFeedback"></div>
       <div style="margin-top:12px">
         <button class="btn" id="btnNext" style="display:none"></button>
+        <button class="btn ghost" id="btnSolution"></button>
         <button class="btn ghost" id="btnQuit"></button>
       </div>
     </div>
@@ -171,17 +183,17 @@
   </div>
 </div>
 
-<script src="data/periods.js?v=20261030d"></script>
-<script src="data/img_chunks.js?v=20261030d"></script>
-<script src="data/topics_1.js?v=20261030d"></script>
-<script src="data/topics_2.js?v=20261030d"></script>
-<script src="data/topics_3.js?v=20261030d"></script>
-<script src="data/topics_4.js?v=20261030d"></script>
-<script src="data/topics_5.js?v=20261030d"></script>
-<script src="data/topics_6.js?v=20261030d"></script>
-<script src="data/topics_7.js?v=20261030d"></script>
-<script src="data/topics_8.js?v=20261030d"></script>
-<script src="data/topics_9.js?v=20261030d"></script>
-<script src="js/engine.js?v=20261030d"></script>
+<script src="data/periods.js?v=20261030e"></script>
+<script src="data/img_chunks.js?v=20261030e"></script>
+<script src="data/topics_1.js?v=20261030e"></script>
+<script src="data/topics_2.js?v=20261030e"></script>
+<script src="data/topics_3.js?v=20261030e"></script>
+<script src="data/topics_4.js?v=20261030e"></script>
+<script src="data/topics_5.js?v=20261030e"></script>
+<script src="data/topics_6.js?v=20261030e"></script>
+<script src="data/topics_7.js?v=20261030e"></script>
+<script src="data/topics_8.js?v=20261030e"></script>
+<script src="data/topics_9.js?v=20261030e"></script>
+<script src="js/engine.js?v=20261030e"></script>
 </body>
 </html>

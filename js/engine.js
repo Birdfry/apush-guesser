@@ -24,6 +24,11 @@ en:{
   choose_lang:"Choose your language",
   lang_note:"You can change it anytime from the \uD83C\uDF10 menu.",
   choose_period:"Choose a historical period",
+  hero_title:"Pick a period, start guessing.",
+  hero_sub:"{n} questions \u00b7 9 periods \u00b7 unlimited rounds",
+  period_meta:"{n} questions",
+  period_acc:"{acc} correct",
+  solution:"\uD83D\uDCA1 Solution",
   bank_line:"Bank: <b>{n}</b> topics \u00b7 \u221e questions<br>Accuracy {acc}{played}",
   played:" ({n} answered)",
   review:"\uD83D\uDC15 Mistakes",
@@ -81,6 +86,11 @@ zh:{
   choose_lang:"\u9009\u62e9\u8bed\u8a00",
   lang_note:"\u968f\u65f6\u53ef\u4ee5\u5728\u53f3\u4e0a\u89d2 \uD83C\uDF10 \u5207\u6362\u3002",
   choose_period:"\u9009\u62e9\u4e00\u4e2a\u5386\u53f2\u65f6\u671f Period",
+  hero_title:"\u9009\u4e00\u4e2a\u65f6\u671f\uff0c\u5f00\u59cb\u7b54\u9898\u3002",
+  hero_sub:"\u5171 {n} \u9053\u9898 \u00b7 9 \u4e2a\u65f6\u671f \u00b7 \u65e0\u9650\u5237\u9898",
+  period_meta:"{n} \u9053\u9898",
+  period_acc:"\u6b63\u786e\u7387 {acc}",
+  solution:"\uD83D\uDCA1 \u770b\u7b54\u6848",
   bank_line:"\u9898\u5e93 <b>{n}</b> \u4e2a\u8003\u70b9 \u00b7 \u221e \u9898\u76ee<br>\u6b63\u786e\u7387 {acc}{played}",
   played:"\uff08\u5df2\u7b54 {n}\uff09",
   review:"\uD83D\uDC15 \u9519\u9898\u672c",
@@ -138,6 +148,11 @@ es:{
   choose_lang:"Elige tu idioma",
   lang_note:"Puedes cambiarlo cuando quieras en el men\u00fa \uD83C\uDF10.",
   choose_period:"Elige un per\u00edodo hist\u00f3rico",
+  hero_title:"Elige un per\u00edodo y empieza.",
+  hero_sub:"{n} preguntas \u00b7 9 per\u00edodos \u00b7 rondas ilimitadas",
+  period_meta:"{n} preguntas",
+  period_acc:"{acc} correctas",
+  solution:"\uD83D\uDCA1 Ver soluci\u00f3n",
   bank_line:"Banco: <b>{n}</b> temas \u00b7 \u221e preguntas<br>Precisi\u00f3n {acc}{played}",
   played:" ({n} respondidas)",
   review:"\uD83D\uDC15 Errores",
@@ -418,6 +433,18 @@ who_src_mcq(p,t){
   const who=pickWho(t);
   if(!t.src||!t.src.text||!who.length) return null;
   const ans=who[0];
+  /* guard: the excerpt must plausibly be BY the answer. If the (English) name
+     never appears in the excerpt or its attribution, "who wrote this?" would
+     teach the wrong author -> skip this template for the topic. */
+  const enAns=(t.who&&t.who[0])||ans;
+  const blob=((t.src.text||"")+" "+(t.src.attr||"")).toLowerCase();
+  const an=String(enAns).toLowerCase();
+  let authorOk=an.length>=3&&blob.indexOf(an)>=0;
+  if(!authorOk){
+    authorOk=an.split(/[\s\u00b7\u30fb\-\\\u2013\u2014\/,;.'\u2019]+/)
+      .some(tok=>tok.length>=4&&!STOPWORDS.has(tok)&&blob.indexOf(tok)>=0);
+  }
+  if(!authorOk) return null;
   const others=poolVals(p,x=>pickWho(x)).filter(w=>who.indexOf(w)<0);
   const d=pickN(others,3,who);
   if(d.length<3) return null;
@@ -551,7 +578,12 @@ function show(v){ currentView=v; VIEWS.forEach(x=>$(x).classList.toggle("on",x==
 function applyI18n(){
   const S=id=>$(id);
   if(S("hdrSub")) S("hdrSub").textContent=tr("subtitle");
-  if(S("homeTitle")) S("homeTitle").textContent=tr("choose_period");
+  if(S("heroTitle")) S("heroTitle").textContent=tr("hero_title");
+  if(S("heroSub")){
+    let n=0; try{ PERIODS.forEach(pd=>{ n+=topicsOf(pd.id).length; }); }catch(e){}
+    S("heroSub").textContent=fmt(tr("hero_sub"),{n:n});
+  }
+  if(S("btnSolution")) S("btnSolution").textContent=tr("solution");
   if(S("btnReview")) S("btnReview").innerHTML=esc(tr("review"))+" <span id='reviewCount'></span>";
   if(S("btnTopics")) S("btnTopics").textContent=tr("topics");
   if(S("footer1")) S("footer1").textContent=tr("footer1");
@@ -581,14 +613,18 @@ function renderHome(){
   const g=$("periodGrid"); g.innerHTML="";
   PERIODS.forEach(pd=>{
     const n=topicsOf(pd.id).length, st=store.stats[pd.id];
-    const acc=st&&st.total?Math.round(100*st.correct/st.total)+"%":"\u2013";
+    const acc=st&&st.total?Math.round(100*st.correct/st.total)+"%":null;
+    const title=LANG==="es"&&pd.es?pd.es:(LANG==="zh"?pd.zh:pd.en);
     const d=document.createElement("div"); d.className="period";
-    const played=st&&st.total?fmt(tr("played"),{n:st.total}):"";
-    d.innerHTML="<div class='pn'>PERIOD "+pd.id+" \u00b7 "+esc(pd.range)+"</div>"+
-      "<div class='pt'>"+esc(LANG==="es"&&pd.es?pd.es:(LANG==="zh"?pd.zh:pd.en))+"</div>"+
-      (LANG==="en"?"":"<div class='pr'>"+esc(LANG==="zh"?pd.en:(pd.zh||""))+"</div>")+
-      "<div class='pm'>"+fmt(tr("bank_line"),{n:n,acc:acc,played:played})+"</div>";
+    d.setAttribute("role","button"); d.setAttribute("tabindex","0");
+    d.innerHTML="<div class='pnum'>"+pd.id+"</div>"+
+      "<div class='pbody'>"+
+      "<div class='prange'>"+esc(pd.range)+"</div>"+
+      "<div class='ptitle'>"+esc(title)+"</div>"+
+      "<div class='pmeta'>"+esc(fmt(tr("period_meta"),{n:n}))+(acc?" \u00b7 "+esc(fmt(tr("period_acc"),{acc:acc})):"")+"</div>"+
+      "</div><div class='pgo'>\u203a</div>";
     d.onclick=()=>{G.period=pd.id; renderMode(); show("view-mode");};
+    d.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); d.onclick(); } };
     g.appendChild(d);
   });
   const rc=$("reviewCount");
@@ -641,6 +677,7 @@ function nextQuestion(){
   const body=$("qBody"); body.innerHTML="";
   const fb=$("qFeedback"); fb.className="feedback"; fb.innerHTML="";
   $("btnNext").style.display="none";
+  $("btnSolution").style.display="inline-block";
   if(q.kind==="mcq"){
     shuffle(q.options).forEach(o=>{
       const b=document.createElement("button"); b.className="opt"; b.textContent=o.t;
@@ -687,6 +724,7 @@ function answer(user,mcqOk){
   h+="<div class='cite'>"+q.citeHTML+"</div>";
   fb.innerHTML=h;
   $("btnNext").style.display="inline-block";
+  $("btnSolution").style.display="none";
 
   if(!ok){
     store.wrong.unshift({pid:G.period,tid:q.topicId,template:q.template,
@@ -783,6 +821,8 @@ function renderReview(){
 /* ---------------- wire up ---------------- */
 $("btnStart").onclick=()=>startPlay(false);
 $("btnNext").onclick=nextQuestion;
+/* solution: reveal the answer, counted as wrong */
+$("btnSolution").onclick=()=>{ const q=G.q; if(q&&!q._done) answer("__solution__",false); };
 $("btnQuit").onclick=()=>{ renderHome(); show("view-home"); };
 $("btnBackHome1").onclick=()=>show("view-home");
 $("btnBackHome2").onclick=()=>show("view-home");
