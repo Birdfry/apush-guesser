@@ -532,7 +532,7 @@ T.pic_event_fib=function(p,t){
   return {tag:tr("tag_pic"),cls:"pic",topic:t,kind:"fib",
     promptHTML:tr("s_pic_fib")+
       imgHTML(t,true)+
-      "<div style='margin:8px 0;color:#cbd5e1'>"+esc(desc)+"</div>"+
+      "<div style='margin:8px 0;color:var(--mut)'>"+esc(desc)+"</div>"+
       (t.year_text?"<div class='kbd-hint'>\uD83D\uDCC5 "+esc(t.year_text)+"</div>":"")+
       "<div class='kbd-hint'>"+esc(tr("s_pic_fib_hint"))+"</div>",
     answerText:nm,
