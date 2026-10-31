@@ -59,8 +59,8 @@ en:{
   s_when_first:"Which of the following happened <b>first</b>?",
   s_when_src:"Read this primary source (from the chapter). About what year was it written?",
   s_who_mcq:"Who is described below?",
-  s_who_fib:"Fill in the blank: the key figure / group in the following event is ______.",
-  s_who_fib_hint:"Name in English; last name is fine (e.g. Washington).",
+  s_who_fib:"Fill in the blank: the central person / group in the following event is ______.",
+  s_who_fib_hint:"Name in English; last name is fine (e.g. {eg}).",
   s_who_src:"Who wrote / said this primary source (from the chapter)?",
   s_why_cause:"What was a main cause of <b>{name}</b>?",
   s_why_sig:"What was the historical significance of <b>{name}</b>?",
@@ -116,8 +116,8 @@ zh:{
   s_when_first:"\u4ee5\u4e0b\u56db\u4e2a\u4e8b\u4ef6\u4e2d\uff0c<b>\u53d1\u751f\u5f97\u6700\u65e9</b>\u7684\u662f\u54ea\u4e00\u4e2a\uff1f",
   s_when_src:"\u9605\u8bfb\u4ee5\u4e0b\u53f2\u6599\uff08\u51fa\u81ea\u672c\u7ae0\uff09\uff0c\u5b83\u5927\u7ea6\u5199\u4e8e\u54ea\u4e00\u5e74\uff1f",
   s_who_mcq:"\u4ee5\u4e0b\u63cf\u8ff0\u7684\u662f<b>\u8c01</b>\uff08\u54ea\u4e2a\u4eba\u7269 / \u7fa4\u4f53\uff09\uff1f",
-  s_who_fib:"\u586b\u7a7a\uff1a\u4ee5\u4e0b\u4e8b\u4ef6\u7684\u5173\u952e\u4eba\u7269 / \u7fa4\u4f53\u662f ______\u3002",
-  s_who_fib_hint:"\u82f1\u6587\u540d\uff0c\u59d3\u4e5f\u53ef\uff08\u5982 Washington\uff09",
+  s_who_fib:"\u586b\u7a7a\uff1a\u4ee5\u4e0b\u4e8b\u4ef6\u7684\u6838\u5fc3\u4eba\u7269 / \u7fa4\u4f53\u662f ______\u3002",
+  s_who_fib_hint:"\u82f1\u6587\u540d\uff0c\u59d3\u4e5f\u53ef\uff08\u5982 {eg}\uff09",
   s_who_src:"\u4ee5\u4e0b\u53f2\u6599\uff08\u51fa\u81ea\u672c\u7ae0\uff09\u7684\u4f5c\u8005 / \u8bf4\u8bdd\u8005\u662f\u8c01\uff1f",
   s_why_cause:"<b>{name}</b> \u7684\u4e3b\u8981\u539f\u56e0\u662f\u4ec0\u4e48\uff1f",
   s_why_sig:"<b>{name}</b> \u7684\u5386\u53f2\u610f\u4e49\u662f\u4ec0\u4e48\uff1f",
@@ -173,8 +173,8 @@ es:{
   s_when_first:"\u00bfCu\u00e1l de los siguientes eventos ocurri\u00f3 <b>primero</b>?",
   s_when_src:"Lee esta fuente primaria (del cap\u00edtulo). \u00bfAproximadamente en qu\u00e9 a\u00f1o fue escrita?",
   s_who_mcq:"\u00bfA qui\u00e9n se describe a continuaci\u00f3n?",
-  s_who_fib:"Completa: la figura / grupo clave del siguiente evento es ______.",
-  s_who_fib_hint:"Nombre en ingl\u00e9s; el apellido basta (p. ej., Washington).",
+  s_who_fib:"Completa: la persona / grupo central del siguiente evento es ______.",
+  s_who_fib_hint:"Nombre en ingl\u00e9s; el apellido basta (p. ej., {eg}).",
   s_who_src:"\u00bfQui\u00e9n escribi\u00f3 / dijo esta fuente primaria (del cap\u00edtulo)?",
   s_why_cause:"\u00bfCu\u00e1l fue una causa principal de <b>{name}</b>?",
   s_why_sig:"\u00bfCu\u00e1l fue el significado hist\u00f3rico de <b>{name}</b>?",
@@ -284,6 +284,51 @@ function redact(text,name){
   n.split(/\s+/).forEach(w=>{ if(w.length>5) out=out.replace(new RegExp("\\b"+escRe(w)+"\\b","gi"),"______"); });
   return out;
 }
+/* ---- anti-leak: never show the answer inside the question prompt ----
+   WHO -> hide person/group names (full names + surname tokens)
+   WHEN -> hide 4-digit years (incl. 1790s style)
+   event name already handled by redact() for pic mode */
+function redactWords(text,words){
+  let out=String(text||"");
+  const escRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const seen=new Set();
+  (words||[]).forEach(w=>{
+    const word=String(w||"").trim();
+    if(word.length<3) return;
+    const key=word.toLowerCase();
+    if(seen.has(key)) return;
+    seen.add(key);
+    const pat=/[\u4e00-\u9fff]/.test(word)?escRe(word):"\\b"+escRe(word)+"\\b";
+    out=out.replace(new RegExp(pat,"gi"),"______");
+  });
+  return out;
+}
+/* every name variant that could leak the answer: en/zh/es + individual tokens.
+   common stopwords are skipped so "the" etc. don't nuke the whole prompt. */
+const STOPWORDS=new Set(("the and for nor but or yet so a an of to in on at by de del al la le les des du der die das van von el los las un una uno et per e y o u por para con sin sobre entre hasta desde as be is are was were it its his her their our your my me we us they them this that these those with from into over under").split(" "));
+function leakNames(t){
+  const names=[];
+  ["who","who_zh","who_es"].forEach(k=>{ (t[k]||[]).forEach(w=>names.push(w)); });
+  const extra=[];
+  names.forEach(n=>String(n).split(/[\s\u00b7\u30fb\-\\\u2013\u2014\/,;.'\u2019]+/).forEach(tok=>{
+    const w=tok.trim();
+    if(w.length>=3&&!STOPWORDS.has(w.toLowerCase())) extra.push(w);
+  }));
+  return names.concat(extra);
+}
+function redactYears(text){
+  return String(text||"")
+    .replace(/\b(1\d{3}|20\d{2})s\b/g,"______")
+    .replace(/\b(1\d{3}|20\d{2})\b/g,"______");
+}
+/* primary-source block with answer hints scrubbed */
+function srcHTMLClean(t,mode){
+  if(!t.src||!t.src.text) return "";
+  let txt=t.src.text, attr=t.src.attr||"";
+  if(mode==="when"){ txt=redactYears(txt); attr=redactYears(attr); }
+  if(mode==="who"){ const ns=leakNames(t); txt=redactWords(txt,ns); attr=redactWords(attr,ns); }
+  return "<div class='src'>\u201c"+esc(txt)+"\u201d"+(attr?"<br>\u2014 "+esc(attr):"")+"</div>";
+}
 
 const T={
 /* ---- WHEN ---- */
@@ -292,7 +337,7 @@ when_year_mcq(p,t){
   const years=poolVals(p,x=>x.year).filter(y=>y!=null).map(Number).filter(y=>!isNaN(y)&&y>1000&&y!==t.year);
   const d=pickN(years,3,[t.year]).map(String);
   if(d.length<3) return null;
-  const nm=dispName(t), what=pick(t,"what");
+  const nm=redactYears(dispName(t)), what=redactYears(pick(t,"what"));
   const opts=shuffle([{t:String(t.year),ok:1},...d.map(x=>({t:x,ok:0}))]);
   return {tag:tr("tag_when_mcq"),cls:"",topic:t,kind:"mcq",options:opts,
     promptHTML:tr("s_when_year")+"<br><b>"+esc(nm)+"</b><br><span style='color:var(--mut)'>"+esc(what)+"</span>"+imgHTML(t,true),
@@ -301,7 +346,7 @@ when_year_mcq(p,t){
 },
 when_year_fib(p,t){
   if(t.year==null) return null;
-  const nm=dispName(t), what=pick(t,"what");
+  const nm=redactYears(dispName(t)), what=redactYears(pick(t,"what"));
   return {tag:tr("tag_when_fib"),cls:"",topic:t,kind:"fib",
     promptHTML:fmt(tr("s_when_year_fib"),{name:esc(nm)})+"<br><span style='color:var(--mut)'>"+esc(what)+"</span>"+
       "<br><span class='kbd-hint'>"+esc(tr("s_when_year_hint"))+"</span>"+imgHTML(t,true),
@@ -315,11 +360,15 @@ when_first_mcq(p,t){
   const years=picks.map(x=>x.year);
   if(new Set(years).size<4) return null;
   const first=picks.reduce((a,b)=>a.year<b.year?a:b);
-  const opts=shuffle(picks.map(x=>({t:dispName(x)+(x.year_text?"("+x.year_text+")":""),ok:x.id===first.id?1:0})));
+  /* hide years inside event names (e.g. "Treaty of Paris (1763)"); options must stay distinct */
+  const optNames=picks.map(x=>redactYears(dispName(x)));
+  if(new Set(optNames).size<4) return null;
+  const firstName=redactYears(dispName(first));
+  const opts=shuffle(picks.map((x,i)=>({t:optNames[i],ok:x.id===first.id?1:0})));
   return {tag:tr("tag_when_mcq"),cls:"",topic:t,kind:"mcq",options:opts,
     promptHTML:tr("s_when_first"),
-    answerText:dispName(first)+"("+first.year+")",
-    check:u=>u===dispName(first)};
+    answerText:firstName+"("+first.year+")",
+    check:u=>u===firstName};
 },
 when_src_mcq(p,t){
   if(!t.src||!t.src.text||t.year==null) return null;
@@ -328,7 +377,7 @@ when_src_mcq(p,t){
   if(d.length<3) return null;
   const opts=shuffle([{t:String(t.year),ok:1},...d.map(x=>({t:x,ok:0}))]);
   return {tag:tr("tag_when_src"),cls:"",topic:t,kind:"mcq",options:opts,
-    promptHTML:tr("s_when_src")+srcHTML(t),
+    promptHTML:tr("s_when_src")+srcHTMLClean(t,"when"),
     answerText:String(t.year),check:u=>u===String(t.year)};
 },
 /* ---- WHO ---- */
@@ -339,7 +388,8 @@ who_mcq(p,t){
   const others=poolVals(p,x=>pickWho(x)).filter(w=>who.indexOf(w)<0);
   const d=pickN(others,3,who);
   if(d.length<3) return null;
-  const what=pick(t,"what"), nm=dispName(t);
+  const ns=leakNames(t);
+  const what=redactWords(pick(t,"what"),ns), nm=redactWords(dispName(t),ns);
   const opts=shuffle([{t:ans,ok:1},...d.map(x=>({t:x,ok:0}))]);
   return {tag:tr("tag_who_mcq"),cls:"who",topic:t,kind:"mcq",options:opts,
     promptHTML:tr("s_who_mcq")+"<br><span style='color:var(--mut)'>"+esc(what||nm)+"</span>"+imgHTML(t,true),
@@ -351,10 +401,15 @@ who_fib(p,t){
   const acc=[];
   ["who","who_zh","who_es"].forEach(k=>{ (t[k]||[]).forEach(w=>acc.push(norm(w))); });
   const last=(t.who||[]).map(w=>norm(w).split(" ").pop());
-  const what=pick(t,"what"), nm=dispName(t);
+  const ns=leakNames(t);
+  const what=redactWords(pick(t,"what"),ns), nm=redactWords(dispName(t),ns);
+  /* example surname in the hint must not be (part of) the answer */
+  const egPool=["Adams","Jefferson","Madison","Monroe","Jackson","Lincoln","Grant","Cleveland"];
+  const nsN=ns.map(norm);
+  const eg=egPool.find(n=>!nsN.some(x=>x.indexOf(norm(n))>=0))||"Adams";
   return {tag:tr("tag_who_fib"),cls:"who",topic:t,kind:"fib",
     promptHTML:tr("s_who_fib")+"<br><span style='color:var(--mut)'>"+esc(what||nm)+"</span>"+
-      "<br><span class='kbd-hint'>"+esc(tr("s_who_fib_hint"))+"</span>"+imgHTML(t,true),
+      "<br><span class='kbd-hint'>"+esc(fmt(tr("s_who_fib_hint"),{eg:eg}))+"</span>"+imgHTML(t,true),
     answerText:who.join("\uff1b"),
     check:u=>{const n=norm(u); if(n.length<2) return false;
       return acc.some(a=>a===n)||last.some(a=>a===n&&n.length>=3);}};
@@ -368,7 +423,7 @@ who_src_mcq(p,t){
   if(d.length<3) return null;
   const opts=shuffle([{t:ans,ok:1},...d.map(x=>({t:x,ok:0}))]);
   return {tag:tr("tag_who_src"),cls:"who",topic:t,kind:"mcq",options:opts,
-    promptHTML:tr("s_who_src")+srcHTML(t),
+    promptHTML:tr("s_who_src")+srcHTMLClean(t,"who"),
     answerText:ans,check:u=>u===ans};
 },
 /* ---- WHY ---- */
@@ -399,7 +454,9 @@ why_sig_mcq(p,t){
 why_term_fib(p,t){
   if(!t.why_term) return null;
   const keys=(t.why_term_accept||[t.why_term]).map(norm);
-  const nm=dispName(t);
+  /* the topic name itself may contain the key term -> scrub it */
+  const termWords=[t.why_term].concat(t.why_term_accept||[]);
+  const nm=redactWords(dispName(t),termWords);
   let qtext=null;
   if(LANG==="es"&&t.why_term_q_es) qtext=t.why_term_q_es;
   else if(LANG==="zh"&&t.why_term_q) qtext=t.why_term_q;
@@ -744,7 +801,8 @@ applyI18n(); renderHome(); show("view-home");
 /* node smoke-test hook (harmless in browser) */
 if(typeof module!=="undefined"&&module.exports){
   module.exports={generateQuestion:generateQuestion,topicsOf:topicsOf,T:T,BY_MODE:BY_MODE,store:store,
-    tr:tr,pick:pick,dispName:dispName,
+    tr:tr,pick:pick,dispName:dispName,setLang:setLang,
+    leakNames:leakNames,redactWords:redactWords,redactYears:redactYears,
     _test:{nextQuestion:nextQuestion,answer:answer,startPlay:startPlay,getG:function(){return G;},show:show}};
 }
 })();
