@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#484EE8"/>
+      <stop offset="1" stop-color="#61A4B0"/>
+    </linearGradient>
+    <linearGradient id="blob" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity=".08"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <path fill="url(#blob)" d="M96 318 C58 236 118 158 206 166 C294 174 272 262 348 250 C424 238 452 306 418 368 C384 430 288 438 224 406 C160 374 128 388 96 318 Z"/>
+  <path fill="url(#blob)" opacity=".55" d="M330 392 C380 380 430 400 442 446 C450 478 430 500 400 506 L300 512 C280 470 296 402 330 392 Z"/>
+  <g fill="#ffffff">
+    <polygon points="256,96 416,184 96,184"/>
+    <rect x="112" y="184" width="288" height="20" rx="3"/>
+    <rect x="124" y="208" width="30" height="140" rx="4"/>
+    <rect x="172" y="208" width="30" height="140" rx="4"/>
+    <rect x="220" y="208" width="30" height="140" rx="4"/>
+    <rect x="262" y="208" width="30" height="140" rx="4"/>
+    <rect x="310" y="208" width="30" height="140" rx="4"/>
+    <rect x="358" y="208" width="30" height="140" rx="4"/>
+    <rect x="104" y="348" width="304" height="18" rx="3"/>
+    <rect x="92" y="366" width="328" height="18" rx="3"/>
+  </g>
+</svg>
